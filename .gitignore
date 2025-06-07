@@ -1,0 +1,50 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment
+.env
+.venv/
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# VS Code
+.vscode/
+
+# Mac
+.DS_Store
+
+# Test/report/logs
+*.log
+*.sqlite3
+*.db
+
+# Build tools
+dist/
+build/
+*.egg-info/
+
+# Uvicorn hot reload state
+uv.lock
+
+# PyInstaller
+*.spec
+
+# Jupyter
+.ipynb_checkpoints/
+
+# mypy
+.mypy_cache/
+
+# Ruff / flake8 / isort
+*.lint
+.ruff_cache/
+
+# Others
+coverage.xml
+htmlcov/
+.cache/
