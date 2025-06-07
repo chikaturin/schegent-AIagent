@@ -51,3 +51,18 @@ python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 ```
+
+### Environment Variables
+
+create file .env
+
+```bash
+GOOGLE_API_KEY=
+MONGO_DB_URI=
+
+DB_HOST=
+DB_PORT=
+DB_USERNAME=
+DB_PASSWORD=
+DB_NAME=
+```
