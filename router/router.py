@@ -1,8 +1,9 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
-from agents.graph.planner_agent import graph
 from typing import List, Literal
 import json
+
+from agents.graph.planner_agent import graph
 from agents.tool.Data.receive_questions import save_habitat
 
 router = APIRouter()
@@ -21,10 +22,7 @@ class QueryResponse(BaseModel):
     messages: List[Message]
 
 
-import json
-
-
-@router.post("/chat")
+@router.post("/chat", response_model=QueryResponse, tags=["Chat"])
 def run_chatbot(request: QueryRequest):
     state = {
         "messages": [{"role": "user", "content": request.Message}],
@@ -43,31 +41,27 @@ def run_chatbot(request: QueryRequest):
             None,
         )
         print(f"Assistant raw output: {assistant_content}")
-
         if assistant_content and assistant_content.startswith("```json"):
             cleanedResult = (
                 assistant_content.replace("```json", "").replace("```", "").strip()
             )
             try:
                 json_result = json.loads(cleanedResult)
-                return {
-                    "content": json_result,
-                }
+                return json_result
             except json.JSONDecodeError:
-                return {
-                    "content": assistant_content,
-                }
-
+                pass
         return {
-            "content": assistant_content or "Xin lỗi, tôi không thể xử lý yêu cầu này.",
+            "messages": [
+                {
+                    "role": "assistant",
+                    "content": assistant_content
+                    or "Xin lỗi, tôi không thể xử lý yêu cầu này.",
+                }
+            ]
         }
 
-    return {
-        "content": "Xin lỗi, tôi không thể xử lý yêu cầu này.",
-    }
 
-
-@router.get("/save_habitat")
+@router.get("/save_habitat", tags=["Habitat"])
 def save_habitat_endpoint():
     try:
         save_habitat()

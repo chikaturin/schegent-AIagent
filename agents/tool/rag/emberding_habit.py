@@ -3,6 +3,13 @@ from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from agents.tool.interface.index import State
 import json
+import torch
+import numpy as np
+from transformers import AutoTokenizer, AutoModel
+from langchain_community.vectorstores import FAISS
+from langchain.embeddings.base import Embeddings
+from langchain.docstore.document import Document
+
 
 events = [
     {
@@ -620,10 +627,71 @@ def genarate_habit_summarise(summarize_habits=False):
     )
 
 
+tokenizer = AutoTokenizer.from_pretrained("sentence-transformers/LaBSE")
+model = AutoModel.from_pretrained("sentence-transformers/LaBSE")
+
+
+# list[np.ndarray]
+# Một danh sách các mảng numpy, mỗi phần tử là 1 np.ndarray (tức một vector embedding ứng với từng câu)
+def labse_embed(texts: list[str]) -> list[np.ndarray]:
+    inputs = tokenizer(texts, return_tensors="pt", padding=True, truncation=True)
+    # return_tensors="pt"
+    # Yêu cầu tokenizer trả về kết quả ở dạng tensor PyTorch (pt = PyTorch).
+    # padding=True
+    # Đảm bảo rằng tất cả các câu được padding (thêm 0) để có cùng độ dài — điều này cần thiết khi xử lý hàng loạt dữ liệu (batch).
+    # truncation=True
+    # Nếu một câu quá dài (quá giới hạn token của mô hình, ví dụ 512 token), thì câu sẽ bị cắt ngắn lại.
+    # Điều này giúp tránh lỗi khi đưa vào mô hình.
+
+    with torch.no_grad():
+        outputs = model(**inputs)
+        embeddings = outputs.last_hidden_state[:, 0, :]
+        embeddings = torch.nn.functional.normalize(embeddings, p=2, dim=1)
+    # with torch.no_grad():
+    # Đây là cú pháp PyTorch để tắt tính toán gradient trong phần này.
+    # Gradient chỉ cần khi bạn huấn luyện mô hình.
+    # Ở đây bạn chỉ lấy embedding (đặc trưng) từ mô hình nên không cần gradient, làm vậy tiết kiệm bộ nhớ và tăng tốc.
+    # ----------
+    # outputs = model(**inputs)
+    # model là mô hình (ví dụ LaBSE hoặc BERT).
+    # inputs là tensor đầu vào (đã được tokenizer chuẩn bị).
+    # outputs chứa kết quả của mô hình, thông thường có nhiều thông tin như:
+    # last_hidden_state: tensor kích thước (batch_size, seq_len, hidden_size) — đại diện các vector ẩn cho từng token trong câu.
+    # Có thể có pooler_output hoặc các thành phần khác tùy mô hình.
+    # ----------
+    # embeddings = outputs.last_hidden_state[:, 0, :]
+    # outputs.last_hidden_state có shape (batch_size, seq_len, hidden_size).
+    # [:, 0, :] chọn token đầu tiên của mỗi câu trong batch, token này thường là token [CLS] trong BERT — được xem là đại diện cho toàn bộ câu.
+    # embeddings có shape (batch_size, hidden_size) — vector embedding cho từng câu.
+    # ----------
+    # Chuẩn hóa embedding theo chuẩn L2 (chuẩn Euclid), nghĩa là:
+    # Mục đích: giúp embedding có độ dài bằng 1, chuẩn hóa vector để dễ so sánh (ví dụ cosine similarity).
+    return embeddings.cpu().numpy()
+    # embeddings hiện tại ở thiết bị (device) GPU nếu có, nên ta chuyển về CPU bằng .cpu().
+    # .numpy() chuyển tensor PyTorch thành mảng NumPy, tiện cho xử lý hoặc lưu trữ.
+
+
 def emberding_rag(state: State):
-    habit_summaries = genarate_habit_summarise(summarize_habits=True)
-    print("Habit summaries generated.")
-    print(habit_summaries)
+    documents = []
+    response = genarate_habit_summarise(summarize_habits=True)
+    cleanedResult = response.replace("```json", "").replace("```", "").strip()
+    habit_summaries = json.loads(cleanedResult)
+
+    for habit in habit_summaries:
+        doc = Document(
+            page_content=json.dumps(habit, ensure_ascii=False),
+            metadata={"source": "habit_summaries"},
+        )
+        documents.append(doc)
+
+    # Tạo text_embeddings đúng format
+    texts = [doc.page_content for doc in documents]
+    embeddings = labse_embed(texts)
+    text_embeddings = list(zip(texts, embeddings))
+
+    # ✅ Gọi FAISS đúng cách
+    vectorstore = FAISS.from_embeddings(text_embeddings, documents)
+    vectorstore.save_local("./faiss_index")
 
     state["messages"].append(
         {

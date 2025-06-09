@@ -8,13 +8,13 @@ from agents.tool.rag.query_habit import query_rag
 import json
 
 
-def planning_prompt(habits, habitPlan, require_user):
+def planning_prompt(require_user):
     return f"""
     Bạn là một trợ lý lập kế hoạch AI thông minh.
     🎯 Nhiệm vụ: Lập lịch tuần đầu tiên cho người dùng dựa trên thói quen, mục tiêu, và dữ liệu lịch biểu hiện có.
 
     📦 Dữ liệu đầu vào:
-    {json.dumps({"habits": habits, "habitPlan": habitPlan, "require_user": require_user}, ensure_ascii=False)}
+    {json.dumps({"require_user": require_user}, ensure_ascii=False)}
 
     ⚙️ Hướng dẫn xử lý:
     1. Nếu có `habitPlan` thì dùng làm ưu tiên chính để chèn lịch dựa trên mức độ ưu tiên và các hoạt động thường ngày.
@@ -61,7 +61,7 @@ def extract_constraints(user_content: str, llm) -> str:
     return response.content
 
 
-def create_new_schedule(state: State):
+def create_new_task(state: State):
     print("Creating new schedule...")
     last_message = state["messages"][-1]
     user_content = last_message.get("content", "")

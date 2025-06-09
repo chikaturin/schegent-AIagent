@@ -29,4 +29,10 @@ except Exception as e:
 
 
 def get_db():
-    return conn
+    return psycopg2.connect(
+        host=DB_HOST,
+        port=DB_PORT,
+        user=DB_USERNAME,
+        password=DB_PASSWORD,
+        database=DB_NAME,
+    )
