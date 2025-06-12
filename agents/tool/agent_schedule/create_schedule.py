@@ -18,8 +18,7 @@ def planning_prompt(habits, habitPlan, require_user):
 
     ⚙️ Hướng dẫn xử lý:
     1. Nếu có `habitPlan` thì dùng làm ưu tiên chính để chèn lịch dựa trên mức độ ưu tiên và các hoạt động thường ngày.
-    2. Nếu không có, dùng thói quen và nguyên tắc mặc định.
-
+    2. Nếu không có, dùng thói quen và nguyên tắc mặc định. Bạn tự tạo lịch.
     🧩 Nguyên tắc xử lý lịch:
     - Tìm **các khung thời gian trống trong ngày** (giữa giờ thức dậy và giờ ngủ).
     - Trong các khung trống đó, chèn thêm hoạt động còn thiếu theo mức độ ưu tiên: học tập > công việc > thể dục > nghỉ ngơi.
@@ -34,7 +33,7 @@ def planning_prompt(habits, habitPlan, require_user):
 
     📄 Mỗi hoạt động có cấu trúc:
     ```json
-    {
+    {{
     "DayOfWeek": "Monday | Tuesday | ...",
     "title": "string",
     "description": "string (optional)",
@@ -45,7 +44,7 @@ def planning_prompt(habits, habitPlan, require_user):
     "icon": "string - biểu tượng hoạt động (vd: 📚, 🧘‍♀️, 🍽️...)",
     "priority": "low | medium | high",
     "event_category": "general | habit | task"
-    }
+    }}
     """
 
 
