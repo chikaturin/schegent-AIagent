@@ -46,7 +46,7 @@ This project is suitable for building AI-powered personal assistants or advanced
 
 ```bash
 git clone https://github.com/chikaturin/schegent-AIagent.git
-cd ai-agent
+cd schegent-AIagent
 python -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
